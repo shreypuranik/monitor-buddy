@@ -1,0 +1,10 @@
+websites: 
+  - name: Example Site 1
+    url: https://example.org
+    site_id: 1
+  - name: Example Site 2
+    url: https://example.org
+    site_id: 2
+  - name: Example Site 3
+    url: https://example.org
+    site_id: 3
