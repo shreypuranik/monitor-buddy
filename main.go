@@ -11,6 +11,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var uiTmpl = template.Must(template.New("ui").Parse(uiTemplate))
+
 func loadConfig() (URLsConfig, error) {
 	data, err := os.ReadFile("urls.yaml")
 	if err != nil {
@@ -27,14 +29,16 @@ func main() {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
+	client := &http.Client{}
+
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
-		statuses := crawlURLs(config)
+		statuses := crawlURLs(config, client)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(statuses)
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		statuses := crawlURLs(config)
+		statuses := crawlURLs(config, client)
 		tmpl := template.Must(template.New("ui").Parse(uiTemplate))
 		w.Header().Set("Content-Type", "text/html")
 		tmpl.Execute(w, statuses)

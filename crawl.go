@@ -5,6 +5,11 @@ import (
 	"sync"
 )
 
+// HTTPClient is satisfied by *http.Client, making crawlURLs testable.
+type HTTPClient interface {
+	Get(url string) (*http.Response, error)
+}
+
 type WebsiteConfig struct {
 	Name   string `yaml:"name"`
 	URL    string `yaml:"url"`
@@ -23,7 +28,7 @@ type SiteStatus struct {
 	Up         bool   `json:"up"`
 }
 
-func crawlURLs(config URLsConfig) []SiteStatus {
+func crawlURLs(config URLsConfig, client HTTPClient) []SiteStatus {
 	results := make([]SiteStatus, len(config.Websites))
 	var wg sync.WaitGroup
 
@@ -36,7 +41,7 @@ func crawlURLs(config URLsConfig) []SiteStatus {
 				URL:    s.URL,
 				SiteID: s.SiteID,
 			}
-			resp, err := http.Get(s.URL)
+			resp, err := client.Get(s.URL)
 			if err != nil {
 				status.StatusCode = 0
 				status.Up = false
