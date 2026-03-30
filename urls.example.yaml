@@ -1,10 +1,21 @@
+regions:
+  - name: Example Region 1 
+    region_id: 1 
+  - name: Example Region 2
+    region_id: 2
+
+
+
 websites: 
   - name: Example Site 1
     url: https://example.org
     site_id: 1
+    region_id: 1
   - name: Example Site 2
     url: https://example.org
     site_id: 2
+    region_id: 2
   - name: Example Site 3
     url: https://example.org
     site_id: 3
+    region_id: 2

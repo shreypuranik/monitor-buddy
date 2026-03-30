@@ -11,13 +11,20 @@ type HTTPClient interface {
 	Get(url string) (*http.Response, error)
 }
 
+type Region struct {
+	Name     string `yaml:"name"`
+	RegionID int    `yaml:"region_id"`
+}
+
 type WebsiteConfig struct {
-	Name   string `yaml:"name"`
-	URL    string `yaml:"url"`
-	SiteID int    `yaml:"site_id"`
+	Name     string `yaml:"name"`
+	URL      string `yaml:"url"`
+	SiteID   int    `yaml:"site_id"`
+	RegionID int    `yaml:"region_id"`
 }
 
 type URLsConfig struct {
+	Regions  []Region        `yaml:"regions"`
 	Websites []WebsiteConfig `yaml:"websites"`
 }
 
@@ -30,11 +37,18 @@ type SiteStatus struct {
 	ResponseTimeMs int64  `json:"response_time_ms"`
 }
 
-func crawlURLs(config URLsConfig, client HTTPClient) []SiteStatus {
-	results := make([]SiteStatus, len(config.Websites))
+func crawlURLs(config URLsConfig, client HTTPClient, regionID int) []SiteStatus {
+	var sites []WebsiteConfig
+	for _, s := range config.Websites {
+		if regionID == 0 || s.RegionID == regionID {
+			sites = append(sites, s)
+		}
+	}
+
+	results := make([]SiteStatus, len(sites))
 	var wg sync.WaitGroup
 
-	for i, site := range config.Websites {
+	for i, site := range sites {
 		wg.Add(1)
 		go func(idx int, s WebsiteConfig) {
 			defer wg.Done()

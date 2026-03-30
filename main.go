@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	"gopkg.in/yaml.v3"
 )
@@ -23,6 +24,21 @@ func loadConfig() (URLsConfig, error) {
 	return config, err
 }
 
+type TemplateData struct {
+	Regions        []Region
+	Statuses       []SiteStatus
+	SelectedRegion int
+}
+
+func regionParam(r *http.Request) int {
+	v := r.URL.Query().Get("region_id")
+	if v == "" {
+		return 0
+	}
+	id, _ := strconv.Atoi(v)
+	return id
+}
+
 func main() {
 	config, err := loadConfig()
 	if err != nil {
@@ -32,16 +48,22 @@ func main() {
 	client := &http.Client{}
 
 	http.HandleFunc("/api/status", func(w http.ResponseWriter, r *http.Request) {
-		statuses := crawlURLs(config, client)
+		regionID := regionParam(r)
+		statuses := crawlURLs(config, client, regionID)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(statuses)
 	})
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		statuses := crawlURLs(config, client)
+		regionID := regionParam(r)
+		statuses := crawlURLs(config, client, regionID)
 		tmpl := template.Must(template.New("ui").Parse(uiTemplate))
 		w.Header().Set("Content-Type", "text/html")
-		tmpl.Execute(w, statuses)
+		tmpl.Execute(w, TemplateData{
+			Regions:        config.Regions,
+			Statuses:       statuses,
+			SelectedRegion: regionID,
+		})
 	})
 
 	fmt.Println("Monitor Buddy running on http://localhost:8080")
@@ -63,6 +85,13 @@ const uiTemplate = `<!DOCTYPE html>
       min-height: 100vh;
       padding: 2rem;
     }
+    .header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      gap: 1rem;
+    }
     h1 {
       font-size: 1.8rem;
       font-weight: 700;
@@ -71,9 +100,19 @@ const uiTemplate = `<!DOCTYPE html>
     }
     .subtitle {
       color: #64748b;
-      margin-bottom: 2rem;
       font-size: 0.9rem;
     }
+    select {
+      background: #1e2130;
+      color: #e2e8f0;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+      cursor: pointer;
+      outline: none;
+    }
+    select:hover { border-color: #64748b; }
     .grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -135,10 +174,20 @@ const uiTemplate = `<!DOCTYPE html>
   </style>
 </head>
 <body>
-  <h1>Monitor Buddy</h1>
-  <p class="subtitle">Live status for all monitored sites</p>
+  <div class="header">
+    <div>
+      <h1>Monitor Buddy</h1>
+      <p class="subtitle">Live status for all monitored sites</p>
+    </div>
+    <select onchange="location.href='/?region_id='+this.value">
+      <option value="0" {{if eq .SelectedRegion 0}}selected{{end}}>All Regions</option>
+      {{range .Regions}}
+      <option value="{{.RegionID}}" {{if eq $.SelectedRegion .RegionID}}selected{{end}}>{{.Name}}</option>
+      {{end}}
+    </select>
+  </div>
   <div class="grid">
-    {{range .}}
+    {{range .Statuses}}
     <div class="card {{if .Up}}up{{else}}down{{end}}">
       <div class="card-header">
         <div class="dot {{if .Up}}up{{else}}down{{end}}"></div>
