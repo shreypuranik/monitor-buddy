@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 	"sync"
+	"time"
 )
 
 // HTTPClient is satisfied by *http.Client, making crawlURLs testable.
@@ -21,11 +22,12 @@ type URLsConfig struct {
 }
 
 type SiteStatus struct {
-	Name       string `json:"name"`
-	URL        string `json:"url"`
-	SiteID     int    `json:"site_id"`
-	StatusCode int    `json:"status_code"`
-	Up         bool   `json:"up"`
+	Name           string `json:"name"`
+	URL            string `json:"url"`
+	SiteID         int    `json:"site_id"`
+	StatusCode     int    `json:"status_code"`
+	Up             bool   `json:"up"`
+	ResponseTimeMs int64  `json:"response_time_ms"`
 }
 
 func crawlURLs(config URLsConfig, client HTTPClient) []SiteStatus {
@@ -41,7 +43,9 @@ func crawlURLs(config URLsConfig, client HTTPClient) []SiteStatus {
 				URL:    s.URL,
 				SiteID: s.SiteID,
 			}
+			start := time.Now()
 			resp, err := client.Get(s.URL)
+			status.ResponseTimeMs = time.Since(start).Milliseconds()
 			if err != nil {
 				status.StatusCode = 0
 				status.Up = false

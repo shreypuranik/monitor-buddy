@@ -76,7 +76,7 @@ const uiTemplate = `<!DOCTYPE html>
     }
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: 1rem;
     }
     .card {
@@ -149,6 +149,7 @@ const uiTemplate = `<!DOCTYPE html>
         <span class="badge down">Unreachable</span>
       {{else}}
         <span class="badge {{if .Up}}up{{else}}down{{end}}">HTTP {{.StatusCode}}</span>
+        <span class="badge {{if .Up}}up{{else}}down{{end}}">{{.ResponseTimeMs}}ms</span>
       {{end}}
     </div>
     {{end}}

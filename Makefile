@@ -1,5 +1,5 @@
 prep:
-	cp urls.yaml.example urls2.yaml
+	cp urls.example.yaml urls.yaml
 run: 
 	go run .
 test: 
